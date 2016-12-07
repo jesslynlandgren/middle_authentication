@@ -7,15 +7,34 @@ const app = express();
 app.set('view engine', 'hbs');
 app.use(bodyParser.json());
 
-app.get('/', function(request, response){
+function middle(request, response, next) {
+    var log = 'method: ' + request.method + '\npath: ' + request.path + '\n';
+    fs.appendFile('log.txt', log, function(err){
+        if (err) {
+            res.status(500);
+            res.json({ error: 'Request not valid' });
+        } else {
+            next();
+        }
+    });
+}
+
+function auth(request, response, next) {
+
+}
+
+app.post('/api/login', function(request, response){
+
+});
+
+app.get('/', middle, function(request, response){
     response.send('Hello World!');
 });
 
-app.put('/documents/:file', function (request, response){
+app.put('/documents/:file', middle, function (request, response){
     let file = request.params.file;
     let filepath = './data/' + file;
     let contents = request.body.contents;
-    console.log(contents)
     fs.writeFile(filepath, contents, function(err) {
         if (err) {
             response.status(500);
@@ -26,7 +45,7 @@ app.put('/documents/:file', function (request, response){
     });
 });
 
-app.get('/documents/:file', function (request, response){
+app.get('/documents/:file', middle, function (request, response){
     let file = request.params.file;
     let filepath = './data/' + file;
     fs.readFile(filepath, function(err, buffer){
@@ -38,7 +57,7 @@ app.get('/documents/:file', function (request, response){
     });
 });
 
-app.get('/documents/:file/display', function (request, response){
+app.get('/documents/:file/display', middle, function (request, response){
     let file = request.params.file;
     let filepath = './data/' + file;
     fs.readFile(filepath, function(err, buffer){
@@ -53,7 +72,7 @@ app.get('/documents/:file/display', function (request, response){
     });
 });
 
-app.get('/documents', function (request, response){
+app.get('/documents', middle, function (request, response){
     fs.readdir('./data/', function(err, files){
         if (err){
             response.status(500).json({message: 'Cannot access directory', error: err.message});
@@ -62,7 +81,7 @@ app.get('/documents', function (request, response){
     });
 });
 
-app.delete('/documents/:file', function (request, response){
+app.delete('/documents/:file', middle, function (request, response){
     let file = request.params.file;
     let filepath = './data/' + file;
     fs.unlink(filepath, function(err, files){
